@@ -25,14 +25,12 @@ while(True):
             jumlah_value = int(response_json['jumlah'])
             harga_value = int(response_json['harga'])
 
+            # #buka servo
+            servo.open()
+            
             # hidupkan waterpump
             waterpump.setup_gpio()
             waterpump.on()
-
-            # #buka servo
-            # servo.init()
-            # servo.buka()
-            servo.open()
             
             # call hitung
             Counter.count(jumlah_value)
@@ -54,10 +52,12 @@ while(True):
     except KeyboardInterrupt:
         break
     except Exception as e:
+        waterpump.off()
+        servo.close()
         print(e.args)
     #     print(traceback.format)
     finally:
-        # lcd_display.display(jumlah_value,jumlah_value*harga_value)
+        lcd_display.display(jumlah_value,jumlah_value*harga_value)
         # print(jumlah_value)
         time.sleep(3)
 
