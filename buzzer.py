@@ -7,8 +7,8 @@ GPIO.setwarnings(False)
 # Select GPIO mode
 GPIO.setmode(GPIO.BCM)
 
-# Set buzzer - pin 23 as output
-buzzer = 16
+# Set buzzer - pin 16 as output
+buzzer = 24 
 GPIO.setup(buzzer, GPIO.OUT)
 
 def hidup():
@@ -33,3 +33,4 @@ GPIO.cleanup()
 
 # # Cleanup and exit the program
 # GPIO.cleanup()
+

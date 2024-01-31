@@ -10,6 +10,7 @@ import waterpump
 import cProfile
 
 servo = Servo()
+waterpump.setup_gpio()
 
 while(True):
     try:
@@ -24,12 +25,12 @@ while(True):
         if hitung_status == 'true':
             jumlah_value = int(response_json['jumlah'])
             harga_value = int(response_json['harga'])
+            lcd_display.display(jumlah_value=jumlah_value,harga_value=harga_value*jumlah_value)
 
             # #buka servo
             servo.open()
             
             # hidupkan waterpump
-            waterpump.setup_gpio()
             waterpump.on()
             
             # call hitung
@@ -50,14 +51,17 @@ while(True):
             # x = requests.post('https://fishcounterta.000webhostapp.com/status.php') 
             # print(x.json())
     except KeyboardInterrupt:
+        waterpump.off()
+        servo.close()
+        lcd_display.close()
         break
     except Exception as e:
         waterpump.off()
         servo.close()
+        lcd_display.close()
         print(e.args)
     #     print(traceback.format)
     finally:
-        lcd_display.display(jumlah_value,jumlah_value*harga_value)
         # print(jumlah_value)
         time.sleep(3)
 
