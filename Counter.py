@@ -30,16 +30,10 @@ from threading import Thread
 import importlib.util
 import math
 from centroidtracker import CentroidTracker
-from numpy import *
-
-
-# Define VideoStream class to handle streaming of video from webcam in separate processing thread
-# Source - Adrian Rosebrock, PyImageSearch: https://www.pyimagesearch.com/2015/12/28/increasing-raspberry-pi-fps-with-python-and-opencv/
 
 # Define and parse input arguments
 parser = argparse.ArgumentParser()
-# parser.add_argument('--modeldir', help='Folder the .tflite file is located in',
-#                     required=True)
+
 parser.add_argument('--modeldir', help='Folder the .tflite file is located in',
                     default='model')
 parser.add_argument('--graph', help='Name of the .tflite file, if different than detect.tflite',

@@ -2,13 +2,14 @@ import requests
 import json
 import Counter
 import time
-import servo
+from servo import Servo
 import lcd_display
-# import relay
-# import buzzer
+import waterpump
+import buzzer
 import cProfile
 
-
+servo = Servo()
+waterpump.setup_gpio()
 
 while(True):
     try:
@@ -23,39 +24,38 @@ while(True):
         if hitung_status == 'true':
             jumlah_value = int(response_json['jumlah'])
             harga_value = int(response_json['harga'])
+            lcd_display.display(jumlah_value=jumlah_value,harga_value=harga_value*jumlah_value)
 
-            # # buka servo
-            servo.init()
-            servo.buka()
-
-            # aktifkan relay
-            # relay.aktifkan()
+            servo.open()                # Hidupkan servo 
+            waterpump.on()              # Hidupkan waterpump
             
-            # call hitung
-            Counter.count(jumlah_value)
-
-            # tutup servo dan bunyi buzzer
-            servo.tutup()
-            # buzzer.hidup()
-            # print("beep")
-
-            # matikan relay 
-            # relay.matikan()
+            Counter.count(jumlah_value) # call hitung
+           
+            servo.close()             # Matikan servo
+            waterpump.off()           # Matikan waterpump
+            buzzer.setup_gpio()
+            buzzer.hidup()            # Bunyikan buzzer
             
-            # tampilkan data di lcd
-            print(jumlah_value*harga_value)
 
+            print(jumlah_value*harga_value) # Print harga total di terminal
 
-            # # reset table status
-            # x = requests.post('https://fishcounterta.000webhostapp.com/status.php') 
-            # print(x.json())
+            # reset table status
+            x = requests.post('https://fishcounterta.000webhostapp.com/status.php') 
+            print(x.json())
+
     except KeyboardInterrupt:
+        waterpump.off()
+        servo.close()
+        lcd_display.close()
         break
+
     except Exception as e:
+        waterpump.off()
+        servo.close()
+        lcd_display.close()
         print(e.args)
     #     print(traceback.format)
+        
     finally:
-        lcd_display.display(jumlah_value,jumlah_value*harga_value)
-        print(jumlah_value)
         time.sleep(3)
 
