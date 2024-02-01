@@ -20,7 +20,7 @@ def setup_gpio():
 def hidup():
     GPIO.output(buzzer, GPIO.HIGH)
     print("Beep")
-    sleep(3) 
+    sleep(2) 
     GPIO.output(buzzer, GPIO.LOW)
 
 # Cleanup and exit the program
