@@ -33,13 +33,15 @@ while(True):
            
             servo.close()             # Matikan servo
             waterpump.off()           # Matikan waterpump
+            buzzer.setup_gpio()
             buzzer.hidup()            # Bunyikan buzzer
+            
 
             print(jumlah_value*harga_value) # Print harga total di terminal
 
-            # # reset table status
-            # x = requests.post('https://fishcounterta.000webhostapp.com/status.php') 
-            # print(x.json())
+            # reset table status
+            x = requests.post('https://fishcounterta.000webhostapp.com/status.php') 
+            print(x.json())
 
     except KeyboardInterrupt:
         waterpump.off()
