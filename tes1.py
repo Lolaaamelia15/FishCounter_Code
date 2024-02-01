@@ -12,14 +12,18 @@
 # # relay.matikan()
 # jumlah = "2.500"
 # harga = "500.000"
-# lcd_display.display(jumlah, harga)
+# # lcd_display.display(jumlah, harga)
 
-import waterpump
-waterpump.setup_gpio()
-waterpump.on()
-waterpump.off()
+# import waterpump
+# waterpump.setup_gpio()
+# waterpump.on()
+# waterpump.off()
 
-# import contoh_waterpump
+# # import contoh_waterpump
 
-# contoh_waterpump.hidup()
-# contoh_waterpump.mati()
+# # contoh_waterpump.hidup()
+# # contoh_waterpump.mati()
+
+import buzzer
+
+buzzer.hidup()
