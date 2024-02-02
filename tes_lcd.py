@@ -16,15 +16,6 @@
 
 import RPi.GPIO as GPIO
 from time import sleep
-<<<<<<< HEAD
-servo = Servo()
-servo.open()
-sleep(5)
-servo.close()
-sleep(5)
-servo.stop()
-
-=======
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(23, GPIO.OUT)
@@ -35,4 +26,3 @@ sleep(10)
 GPIO.output(23, GPIO.LOW)
 GPIO.output(24, GPIO.LOW)
 GPIO.cleanup()
->>>>>>> 2987f0c70c913aeab2ea6eeef609d66fd1690f2e
