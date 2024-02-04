@@ -26,6 +26,7 @@ def hidup():
     GPIO.output(buzzer, GPIO.HIGH)
     print("Beep")
     sleep(2) 
+def mati():
     GPIO.output(buzzer, GPIO.LOW)
 
 # Cleanup and exit the program
