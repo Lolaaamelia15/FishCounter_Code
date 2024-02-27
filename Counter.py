@@ -41,18 +41,18 @@ parser.add_argument('--graph', help='Name of the .tflite file, if different than
 parser.add_argument('--labels', help='Name of the labelmap file, if different than labelmap.txt',
                     default='labelmap.txt')
 parser.add_argument('--threshold', help='Minimum confidence threshold for displaying detected objects',
-                    default=0.7)
+                    default=0.80)
 parser.add_argument('--resolution', help='Desired webcam resolution in WxH. If the webcam does not support the resolution entered, errors may occur.',
-                    default='1280x720')
+                    default='640x640')
 parser.add_argument('--edgetpu', help='Use Coral Edge TPU Accelerator to speed up detection',
                     action='store_true')
 parser.add_argument('--video', help='Name of the video file',
-                    default='video2.mp4')
+                    default='video5.mp4')
 
 args = parser.parse_args()
 
 # initialize our centroid tracker and frame dimensions
-ct = CentroidTracker()
+ct = CentroidTracker(maxDisappeared=5)
 objects ={}
 old_objects={}
 dirlabels={}
@@ -163,6 +163,7 @@ def count(jumlah):
     global objects, old_objects, jumlahIkanLewat, object_movements, frame_rate_calc, obsFrames
     imW = video.get(cv2.CAP_PROP_FRAME_WIDTH)
     imH = video.get(cv2.CAP_PROP_FRAME_HEIGHT)
+    threshold_timeout = 12
     while(video.isOpened()): # Uncomment block for recorded video input
         # Acquire frame and resize to expected shape [1xHxWx3]
         # Start timer (for calculating frame rate)
@@ -221,15 +222,14 @@ def count(jumlah):
                     label_ymin = max(ymin, labelSize[1] + 10) # Make sure not to draw label too close to top of window
                     cv2.rectangle(frame, (xmin, label_ymin-labelSize[1]-10), (xmin+labelSize[0], label_ymin+baseLine-10), (255, 255, 255), cv2.FILLED) # Draw white box to put label text in
                     cv2.putText(frame, label, (xmin, label_ymin-7), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2) # Draw label text
-                
-        # Garis imajiner
-        # Garis imajiner
-        line_x = frame.shape[1] // 2  # Set the x-coordinate to the center of the frame
-        cv2.line(frame, (line_x, 0), (line_x, frame.shape[0]), (0, 0, 255), 2)  # Warna garis: (merah)
 
-        # Hitung jumlah ID yang melewati garis imajiner
-        count_left_line = 0
-        count_right_line = 0
+        # # Garis imajiner
+        # line_x = frame.shape[1] // 2  # Set the x-coordinate to the center of the frame
+        # cv2.line(frame, (line_x, 0), (line_x, frame.shape[0]), (0, 0, 255), 2)  # Warna garis: (merah)
+
+        # # Hitung jumlah ID yang melewati garis imajiner
+        # count_left_line = 0
+        # count_right_line = 0
         
         #update the centroid for the objects
         if len(rects) > 0:
@@ -237,17 +237,15 @@ def count(jumlah):
             objectslist= pd.DataFrame.from_dict(objects).transpose()
             objectslist.columns = ['c','d']
             objectslist['index'] = objectslist.index
-        
-            
-            
+                 
             for index, row in objectslist.iterrows():
                 # Periksa apakah pusat massa berada di atas atau di bawah garis
-                if row['d'] < line_x:
-                    count_left_line += 1
-                    if row['index'] not in jumlahIkanLewat:
-                        jumlahIkanLewat.append(row['index'])
-                else:
-                    count_right_line += 1
+                # if row['d'] < line_x:
+                #     count_left_line += 1
+                if row['index'] not in jumlahIkanLewat:
+                         jumlahIkanLewat.append(row['index'])
+                # else:
+                #     count_right_line += 1
                 
                 # Menampilkan ID masing-masing object
                 text = "ID {}".format(row['index'])
@@ -255,15 +253,15 @@ def count(jumlah):
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
         print(*jumlahIkanLewat, sep=",")
-        print("Jumlah ikan yg lewat {}".format(len(jumlahIkanLewat)))
-        
-        if(len(jumlahIkanLewat) >= jumlah):
+        print("Jumlah ikan yg lewat: {}".format(len(jumlahIkanLewat)))
+
+        if(len(objects) >= jumlah):
             break
 
         # Menampilkan jumlah ID pada frame
-        cv2.putText(frame, f'Total Bibit: {len(objects)}', (30, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2, cv2.LINE_AA)
-        cv2.putText(frame, f'Jumlah di kanan garis: {count_left_line}', (30, 130), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2, cv2.LINE_AA)
-        cv2.putText(frame, f'Jumlah di kiri garis: {count_right_line}', (30, 170), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2, cv2.LINE_AA)
+        cv2.putText(frame, f'Total Bibit: {len(jumlahIkanLewat)}', (30, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2, cv2.LINE_AA)
+        # cv2.putText(frame, f'Jumlah di kanan garis: {count_left_line}', (30, 130), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2, cv2.LINE_AA)
+        # cv2.putText(frame, f'Jumlah di kiri garis: {count_right_line}', (30, 170), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2, cv2.LINE_AA)
 
         # calculate the difference between this and the previous frame
         if old_objects:
@@ -282,10 +280,10 @@ def count(jumlah):
                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (60, 60, 255), 2)       
 
         # Menampilkan pergerakan objek
-        for obj_id, movements in object_movements.items():
-            direction_text = ', '.join(movements[-5:])  # Hanya menampilkan 5 pergerakan terakhir
-            cv2.putText(frame, f'Objek {obj_id}: {direction_text}', (30, 210 + (20 * obj_id)), cv2.FONT_HERSHEY_SIMPLEX,
-                        0.5, (0, 255, 0), 2)
+        # for obj_id, movements in object_movements.items():
+        #     direction_text = ', '.join(movements[-5:])  # Hanya menampilkan 5 pergerakan terakhir
+        #     cv2.putText(frame, f'Objek {obj_id}: {direction_text}', (30, 210 + (20 * obj_id)), cv2.FONT_HERSHEY_SIMPLEX,
+        #                 0.5, (0, 255, 0), 2)
 
         # prints the direction of travel (if any) and timestamp
         print(dirlabels)
