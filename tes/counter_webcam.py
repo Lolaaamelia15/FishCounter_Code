@@ -237,7 +237,7 @@ def count(interval):
             #update the centroid for the objects
             if len(rects) > 0:
                 objects = ct.update(rects)
-                objectslist= pd.DataFrame.from_dict(objects).transpose()
+                objectslist = pd.DataFrame.from_dict(objects).transpose()
                 objectslist.columns = ['c','d']
                 objectslist['index'] = objectslist.index
                     

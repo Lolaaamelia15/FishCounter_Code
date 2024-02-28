@@ -384,7 +384,8 @@ def detect_objects(image_path):
 
         # Show the frame
         cv2.imshow('Detected Objects', frame)
-        cv2.waitKey(0)
+        if cv2.waitKey(0) == ord('q'):
+            break
 
 # Add event listener for spacebar press
 keyboard.on_press(spacebar_pressed)

@@ -20,20 +20,22 @@ import numpy as np
 import sys
 import glob
 import importlib.util
+import pandas as pd
+from centroidtracker import CentroidTracker
 
 
 # Define and parse input arguments
 parser = argparse.ArgumentParser()
 parser.add_argument('--modeldir', help='Folder the .tflite file is located in',
-                    required=True)
+                    default='model')
 parser.add_argument('--graph', help='Name of the .tflite file, if different than detect.tflite',
                     default='detect.tflite')
 parser.add_argument('--labels', help='Name of the labelmap file, if different than labelmap.txt',
                     default='labelmap.txt')
 parser.add_argument('--threshold', help='Minimum confidence threshold for displaying detected objects',
-                    default=0.5)
+                    default=0.85)
 parser.add_argument('--image', help='Name of the single image to perform detection on. To run detection on multiple images, use --imagedir',
-                    default=None)
+                    default='img_1.jpg')
 parser.add_argument('--imagedir', help='Name of the folder containing images to perform detection on. Folder must contain only images.',
                     default=None)
 parser.add_argument('--save_results', help='Save labeled images and annotation data to a results folder',
@@ -44,6 +46,13 @@ parser.add_argument('--edgetpu', help='Use Coral Edge TPU Accelerator to speed u
                     action='store_true')
 
 args = parser.parse_args()
+
+# initialize our centroid tracker and frame dimensions
+ct = CentroidTracker(maxDisappeared=5)
+objects ={}
+old_objects={}
+dirlabels={}
+jumlahIkan = []
 
 
 # Parse user inputs
@@ -65,9 +74,9 @@ if (IM_NAME and IM_DIR):
     print('Error! Please only use the --image argument or the --imagedir argument, not both. Issue "python TFLite_detection_image.py -h" for help.')
     sys.exit()
 
-# If neither an image or a folder are specified, default to using 'test1.jpg' for image name
-if (not IM_NAME and not IM_DIR):
-    IM_NAME = 'test1.jpg'
+# # If neither an image or a folder are specified, default to using 'test1.jpg' for image name
+# if (not IM_NAME and not IM_DIR):
+#     IM_NAME = 'test1.jpg'
 
 # Import TensorFlow libraries
 # If tflite_runtime is installed, import interpreter from tflite_runtime, else import from regular tensorflow
@@ -181,30 +190,56 @@ for image_path in images:
     classes = interpreter.get_tensor(output_details[classes_idx]['index'])[0] # Class index of detected objects
     scores = interpreter.get_tensor(output_details[scores_idx]['index'])[0] # Confidence of detected objects
 
-    detections = []
+    rects = []
 
-    # Loop over all detections and draw detection box if confidence is above minimum threshold
+    # Loop over all rects and draw detection box if confidence is above minimum threshold
     for i in range(len(scores)):
         if ((scores[i] > min_conf_threshold) and (scores[i] <= 1.0)):
 
-            # Get bounding box coordinates and draw box
-            # Interpreter can return coordinates that are outside of image dimensions, need to force them to be within image using max() and min()
-            ymin = int(max(1,(boxes[i][0] * imH)))
-            xmin = int(max(1,(boxes[i][1] * imW)))
-            ymax = int(min(imH,(boxes[i][2] * imH)))
-            xmax = int(min(imW,(boxes[i][3] * imW)))
-            
-            cv2.rectangle(image, (xmin,ymin), (xmax,ymax), (10, 255, 0), 2)
+            object_name = labels[int(classes[i])]
+            if object_name == 'lele':
 
-            # Draw label
-            object_name = labels[int(classes[i])] # Look up object name from "labels" array using class index
-            label = '%s: %d%%' % (object_name, int(scores[i]*100)) # Example: 'person: 72%'
-            labelSize, baseLine = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2) # Get font size
-            label_ymin = max(ymin, labelSize[1] + 10) # Make sure not to draw label too close to top of window
-            cv2.rectangle(image, (xmin, label_ymin-labelSize[1]-10), (xmin+labelSize[0], label_ymin+baseLine-10), (255, 255, 255), cv2.FILLED) # Draw white box to put label text in
-            cv2.putText(image, label, (xmin, label_ymin-7), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2) # Draw label text
+                # Get bounding box coordinates and draw box
+                # Interpreter can return coordinates that are outside of image dimensions, need to force them to be within image using max() and min()
+                ymin = int(max(1,(boxes[i][0] * imH)))
+                xmin = int(max(1,(boxes[i][1] * imW)))
+                ymax = int(min(imH,(boxes[i][2] * imH)))
+                xmax = int(min(imW,(boxes[i][3] * imW)))
+                box = np.array([xmin,ymin,xmax,ymax])
+                
+                cv2.rectangle(image, (xmin,ymin), (xmax,ymax), (10, 255, 0), 2)
+                rects.append(box.astype("int"))
+                # Draw label
+                object_name = labels[int(classes[i])] # Look up object name from "labels" array using class index
+                label = '%s: %d%%' % (object_name, int(scores[i]*100)) # Example: 'person: 72%'
+                labelSize, baseLine = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2) # Get font size
+                label_ymin = max(ymin, labelSize[1] + 10) # Make sure not to draw label too close to top of window
+                cv2.rectangle(image, (xmin, label_ymin-labelSize[1]-10), (xmin+labelSize[0], label_ymin+baseLine-10), (255, 255, 255), cv2.FILLED) # Draw white box to put label text in
+                cv2.putText(image, label, (xmin, label_ymin-7), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2) # Draw label text
 
-            detections.append([object_name, scores[i], xmin, ymin, xmax, ymax])
+                # rects.append([object_name, scores[i], xmin, ymin, xmax, ymax])
+                
+
+            if len(rects) > 0:
+                objects = ct.update(rects)
+                objectslist = pd.DataFrame.from_dict(objects).transpose()
+                objectslist.columns = ['c', 'd']
+                objectslist['index'] = objectslist.index
+
+                for index, row in objectslist.iterrows():
+                    if row['index'] not in jumlahIkan:
+                        jumlahIkan.append(row['index'])
+
+                    # Menampilkan ID masing-masing object
+                    text = "ID {}".format(row['index'])
+                    cv2.putText(image, text, (row['c'] - 10, row['d'] - 10),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+
+            print(*jumlahIkan, sep=",")
+            print("Jumlah Ikan : {}".format(len(jumlahIkan))) 
+
+            # Menampilkan jumlah ID pada frame 
+            cv2.putText(image, f'Jumlah Bibit: {len(jumlahIkan)}', (30,90), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
 
     # All the results have been drawn on the image, now display the image
     if show_results:
@@ -230,9 +265,9 @@ for image_path in images:
 
         # Write results to text file
         # (Using format defined by https://github.com/Cartucho/mAP, which will make it easy to calculate mAP)
-        with open(txt_savepath,'w') as f:
-            for detection in detections:
-                f.write('%s %.4f %d %d %d %d\n' % (detection[0], detection[1], detection[2], detection[3], detection[4], detection[5]))
+        # with open(txt_savepath,'w') as f:
+        #     for detection in rects:
+        #         f.write('%s %.4f %d %d %d %d\n' % (detection[0], detection[1], detection[2], detection[3], detection[4], detection[5]))
 
 # Clean up
 cv2.destroyAllWindows()
