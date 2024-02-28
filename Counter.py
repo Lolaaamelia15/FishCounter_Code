@@ -52,7 +52,7 @@ parser.add_argument('--video', help='Name of the video file',
 args = parser.parse_args()
 
 # initialize our centroid tracker and frame dimensions
-ct = CentroidTracker(maxDisappeared=5)
+ct = CentroidTracker(maxDisappeared=20)
 objects ={}
 old_objects={}
 dirlabels={}
@@ -141,7 +141,7 @@ freq = cv2.getTickFrequency()
 # Open video file
 VIDEO_PATH = os.path.join(CWD_PATH,VIDEO_NAME)
 
-video = cv2.VideoCapture(VIDEO_PATH)
+video = cv2.VideoCapture(0)
 
 
 fourcc = cv2.VideoWriter_fourcc('X','V','I','D')
