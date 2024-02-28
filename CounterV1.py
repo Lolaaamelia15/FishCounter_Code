@@ -1,23 +1,3 @@
-######## Directional-object-tracking-with-TFLite-and-Edge-TPU #########
-# Author: Tahir Mahmood
-# Date: 05/08/2020
-# Latest commit update: Onscreen labels and more accurate tracking
-
-# This code performs object detection and tracking using a pre-trained Tensor Flow Lite (TFLite) model.
-# In addition it can track for each unique object how it is moving through the frame of vision.
-# As with my previous project there is a filter built into the code so the type of object to track can be specified.
-# For example it can be set to only track all 'people' moving through the frame but ignore other objects such as dogs or bikes.
-# Practical use: Automated throughfare or doorway monitoring to under stand flow of 'people' in 
-#                each direction or calculate how many 'people' are 'inside' at any one time.
-
-# Credits:
-# Main boilerplate for object detection and labelling using TFLite & Edge TPU - Evan Juras
-# https://github.com/EdjeElectronics/TensorFlow-Lite-Object-Detection-on-Android-and-Raspberry-Pi
-# This code was based off the TensorFlow Lite image classification example at:
-# https://github.com/tensorflow/tensorflow/blob/master/tensorflow/lite/examples/python/label_image.py
-# Centroid tracking helper code for object tracking:
-# https://github.com/lev1khachatryan/Centroid-Based_Object_Tracking 
-
 # Import packages
 import os
 import argparse
@@ -31,10 +11,6 @@ import importlib.util
 import math
 from centroidtracker import CentroidTracker
 from numpy import *
-
-
-# Define VideoStream class to handle streaming of video from webcam in separate processing thread
-# Source - Adrian Rosebrock, PyImageSearch: https://www.pyimagesearch.com/2015/12/28/increasing-raspberry-pi-fps-with-python-and-opencv/
 
 # Define and parse input arguments
 parser = argparse.ArgumentParser()
@@ -52,7 +28,7 @@ parser.add_argument('--resolution', help='Desired webcam resolution in WxH. If t
 parser.add_argument('--edgetpu', help='Use Coral Edge TPU Accelerator to speed up detection',
                     action='store_true')
 parser.add_argument('--video', help='Name of the video file',
-                    default='video5.mp4')
+                    default='video.mp4')
 
 args = parser.parse_args()
 
@@ -150,13 +126,8 @@ imW = video.get(cv2.CAP_PROP_FRAME_WIDTH)
 imH = video.get(cv2.CAP_PROP_FRAME_HEIGHT)
 
 fourcc = cv2.VideoWriter_fourcc('X','V','I','D')
-out = cv2.VideoWriter("output.avi", fourcc, 20.0, (1280,720))
+out = cv2.VideoWriter("output.avi", fourcc, 20.0, (640,640))
 
-# Newly added co-ord stuff
-# leftcount = 0
-# rightcount = 0 
-# upcount = 0
-# downcount = 0
 obsFrames = 0
 
 jumlahIkanLewat = []
@@ -222,10 +193,6 @@ while(video.isOpened()): # Uncomment block for recorded video input
                 label_ymin = max(ymin, labelSize[1] + 10) # Make sure not to draw label too close to top of window
                 cv2.rectangle(frame, (xmin, label_ymin-labelSize[1]-10), (xmin+labelSize[0], label_ymin+baseLine-10), (255, 255, 255), cv2.FILLED) # Draw white box to put label text in
                 cv2.putText(frame, label, (xmin, label_ymin-7), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2) # Draw label text
-            
-    # # Garis imajiner
-    # line_y = frame.shape[0] // 2
-    # cv2.line(frame, (0, line_y), (frame.shape[1], line_y), (0, 0, 255), 2)  # Warna garis: (merah)
     
     #update the centroid for the objects
     objects = ct.update(rects)
@@ -233,36 +200,19 @@ while(video.isOpened()): # Uncomment block for recorded video input
     objectslist.columns = ['c','d']
     objectslist['index'] = objectslist.index
     
-  
-         
-    # Hitung jumlah ID yang melewati garis imajiner
-    count_above_line = 0
-    count_below_line = 0
-    
     for index, row in objectslist.iterrows():
-        # Periksa apakah pusat massa berada di atas atau di bawah garis
-        # if row['d'] < line_y:
-        #     count_above_line += 1
-        #     if row['index'] not in jumlahIkanLewat:
-        #         jumlahIkanLewat.append(row['index'])
-        # else:
-        #     count_below_line += 1
-        
-        # Menampilkan ID masing-masing object
         text = "ID {}".format(row['index'])
         cv2.putText(frame, text, (row['c'] - 10, row['d'] - 10),
-             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
     print(*objects, sep=",")
-    print("Jumlah ikan yg lewat {}".format(len(objects)))
+    print("Jumlah bibit : {}".format(len(objects)))
     
     if(len(objects) >= 3):
         break
 
-    # Menampilkan jumlah ID pada frame
-    cv2.putText(frame, f'Total Bibit: {len(objects)}', (30, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2, cv2.LINE_AA)
-    # cv2.putText(frame, f'Jumlah di Atas Garis: {count_above_line}', (30, 130), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2, cv2.LINE_AA)
-    # cv2.putText(frame, f'Jumlah di Bawah Garis: {count_below_line}', (30, 170), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2, cv2.LINE_AA)
+    # Menampilkan jumlah bibit pada frame
+    cv2.putText(frame, f'Jumlah Bibit: {len(objects)}', (30, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 0, 0), 2, cv2.LINE_AA)
 
     # calculate the difference between this and the previous frame
     x = DictDiff(objects,old_objects)
@@ -279,52 +229,8 @@ while(video.isOpened()): # Uncomment block for recorded video input
         cv2.putText(frame, direction, (j+ 10, k + 10),
         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (60, 60, 255), 2)       
 
-    # Melacak pergerakan objek
-    for index, row in z.iterrows():
-        obj_id = row['index']
-        if obj_id not in object_movements:
-            object_movements[obj_id] = []
-
-        # Memeriksa apakah pusat massa berada di atas atau di bawah garis
-        # if row['d'] < line_y:
-        #     count_above_line += 1
-        #     object_movements[obj_id].append("Up")
-        # else:
-        #     count_below_line += 1
-        #     object_movements[obj_id].append("Down")
-
-    # Menampilkan pergerakan objek
-    for obj_id, movements in object_movements.items():
-        direction_text = ', '.join(movements[-5:])  # Hanya menampilkan 5 pergerakan terakhir
-        cv2.putText(frame, f'Objek {obj_id}: {direction_text}', (30, 210 + (20 * obj_id)), cv2.FONT_HERSHEY_SIMPLEX,
-                    0.5, (0, 255, 0), 2)
-
-    #see what the difference in centroids is after every x frames to determine direction of movement
-    #and tally up total number of objects that travelled left or right
-    # if obsFrames % 5 == 0: #set this to a higher number for more accurate tallying
-    #   for index,row in z.iterrows():
-            
-    #         if row['b'] < -2:
-    #             dirlabels[index] = "Down"
-    #         if row['b'] > 2 :
-    #             dirlabels[index] = "Up"   
-    #         if row['a'] > 2:
-    #             dirlabels[index] = "Left"
-    #         if row['a'] < -2:
-    #             dirlabels[index] = "Right"
-    #         if row['b'] > 3 & row['a'] > 1:
-    #             dirlabels[index] = "Up Left"
-    #         if row['b'] > 3 & row['a'] < -1:
-    #             dirlabels[index] = "Up Right"
-    #         if row['b'] < -3 & row['a'] > 1:
-    #             dirlabels[index] = "Down Left"
-    #         if row['b'] < -3 & row['a'] < -1:
-    #             dirlabels[index] = "Down Right"
-    #         if row['b'] > 30 | row['a'] > 30:
-    #             dirlabels[index] = "" # to ignore direction on the first frame obejects are loaded in
-      
     # prints the direction of travel (if any) and timestamp
-    print(dirlabels, time.ctime())
+    print(dirlabels)
     
     # Draw framerate in corner of frame
     cv2.putText(frame,'FPS: {0:.2f}'.format(frame_rate_calc),(30,40),cv2.FONT_HERSHEY_SIMPLEX,0.7,(255,0,0),2,cv2.LINE_AA)
