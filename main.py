@@ -1,6 +1,7 @@
 import requests
 import json
-import Counter
+# import Counter
+import newCounter
 import time
 from servo import Servo
 import lcd_display
@@ -26,13 +27,15 @@ while(True):
             harga_value = int(response_json['harga'])
             lcd_display.display(jumlah_value=jumlah_value,harga_value=harga_value*jumlah_value)
 
-            servo.open()                # Hidupkan servo 
-            waterpump.on()              # Hidupkan waterpump
-            
-            Counter.count(jumlah_value) # call hitung
+            # waterpump.on()              # Hidupkan waterpump
+            jumlah_ikan = 0
+            while (jumlah_ikan < jumlah_value):
+                servo.close()             # Matikan servo
+                jumlah_ikan += newCounter.count(interval=10) # call hitung
+                servo.open()                # Hidupkan servo
+                time.sleep(10) # waktu untuk mengeluarkan ikan
            
-            servo.close()             # Matikan servo
-            waterpump.off()           # Matikan waterpump
+            # waterpump.off()           # Matikan waterpump
             buzzer.setup_gpio()
             buzzer.hidup()            # Bunyikan buzzer
             
